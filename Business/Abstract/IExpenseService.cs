@@ -11,5 +11,6 @@ namespace Business.Abstract
         IResult Add(Expense expense);
         IResult Update(Expense expense);
         IResult Delete(int expenseId);
+        IDataResult<byte[]> GetMonthlyReport(int year, int month);
     }
 }

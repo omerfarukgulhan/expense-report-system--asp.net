@@ -37,6 +37,18 @@ namespace WebAPI.Controllers
             return BadRequest(result);
         }
 
+        //        [HttpGet("report/monthly-expenses/{year}/{month}")]
+        [HttpGet("report")]
+        public IActionResult GetMonthlyReport()
+        {
+            var result = _expenseService.GetMonthlyReport();
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return File(result.Data, "application/pdf", "PhoneList.pdf");
+        }
+
         [HttpPost]
         public IActionResult Add(Expense expense)
         {
