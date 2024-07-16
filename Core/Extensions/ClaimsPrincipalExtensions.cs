@@ -20,9 +20,9 @@ namespace Core.Extensions
             return claimsPrincipal?.Claims(ClaimTypes.Role);
         }
 
-        public static string GetUserId(this ClaimsPrincipal claimsPrincipal)
+        public static int GetUserId(this ClaimsPrincipal claimsPrincipal)
         {
-            return claimsPrincipal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.Parse(claimsPrincipal?.FindFirst(ClaimTypes.NameIdentifier)?.Value);
         }
     }
 }

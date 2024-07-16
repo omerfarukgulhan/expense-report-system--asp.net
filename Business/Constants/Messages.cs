@@ -11,6 +11,8 @@
         public static string UserRegistered = "User successfully registered";
         public static string AccessTokenCreated = "Access token successfully created";
 
+        public static string UserMismatch = "User Mismatch";
+
         public static string DataAdded = "Data added";
         public static string DataDeleted = "Data deleted";
         public static string DataFetched = "Data fetched";
