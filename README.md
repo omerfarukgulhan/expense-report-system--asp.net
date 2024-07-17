@@ -18,6 +18,14 @@ This Expense Report System is an api built with ASP.NET, designed to help users 
 - **PDF Report Generation**
   - Generate detailed expense reports in PDF format.
 
+### Example Reports
+
+[View the PDF Documentation](./WebAPI/ExpenseReport_82505912-027f-4204-85d9-0ac8fcb38160.pdf)
+
+[View the PDF Documentation](./WebAPI/ExpenseReport_bf5ba47a-b73f-4ede-8068-10e4b88997bf.pdf)
+
+[View the PDF Documentation](./WebAPI/ExpenseReport_ff539719-1d2f-4183-b242-e7faa8344b81.pdf)
+
 ## Technologies Used
 
 - **Backend:**
