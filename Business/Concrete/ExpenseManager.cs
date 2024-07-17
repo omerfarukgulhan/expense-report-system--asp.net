@@ -68,8 +68,92 @@ namespace Business.Concrete
             return new SuccessDataResult<Expense>(_expenseDal.Get(e => e.Id == expenseId && e.UserId == _httpContextAccessor.HttpContext.User.GetUserId()), Messages.DataFetched);
         }
 
+        [SecuredOperation("user")]
+        public IDataResult<List<Expense>> GetMonthlyExpenses(int year, int month)
+        {
+            return new SuccessDataResult<List<Expense>>(_expenseDal.GetAll(e => e.UserId == _httpContextAccessor.HttpContext.User.GetUserId() && e.ExpenseDate.Year == year && e.ExpenseDate.Month == month), Messages.DataFetched);
+        }
 
+        [SecuredOperation("user")]
+        public IDataResult<byte[]> GetMonthlyReport(int year, int month)
+        {
+            List<Expense> expenses = _expenseDal.GetAll(e => e.UserId == _httpContextAccessor.HttpContext.User.GetUserId() && e.ExpenseDate.Year == year && e.ExpenseDate.Month == month);
 
+            Settings.License = LicenseType.Community;
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(2, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(12));
+
+                    page.Header().Text("Expense Report").FontSize(20).Bold().AlignCenter();
+
+                    page.Content().Column(column =>
+                    {
+                        column.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                                columns.RelativeColumn();
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Element(CellStyle).Text("Id");
+                                header.Cell().Element(CellStyle).Text("UserId");
+                                header.Cell().Element(CellStyle).Text("Amount");
+                                header.Cell().Element(CellStyle).Text("Expense Date");
+                                header.Cell().Element(CellStyle).Text("Description");
+
+                                static IContainer CellStyle(IContainer container)
+                                {
+                                    return container.DefaultTextStyle(x => x.Bold()).Padding(5).BorderBottom(1).BorderColor(Colors.Black);
+                                }
+                            });
+
+                            foreach (var expense in expenses)
+                            {
+                                table.Cell().Element(CellStyle).Text(expense.Id.ToString());
+                                table.Cell().Element(CellStyle).Text(expense.UserId.ToString());
+                                table.Cell().Element(CellStyle).Text(expense.Amount.ToString());
+                                table.Cell().Element(CellStyle).Text(expense.ExpenseDate.ToShortDateString());
+                                table.Cell().Element(CellStyle).Text(expense.Description);
+
+                                static IContainer CellStyle(IContainer container)
+                                {
+                                    return container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5);
+                                }
+                            }
+                            var totalAmount = expenses.Sum(e => e.Amount);
+                            table.Cell().ColumnSpan(5).Text($"Total Amount: {totalAmount}").Bold().LineHeight(3f);
+                        });
+                    });
+
+                    page.Footer().AlignCenter().Text(x =>
+                    {
+                        x.Span("Page ");
+                        x.CurrentPageNumber();
+                        x.Span(" of ");
+                        x.TotalPages();
+                    });
+                });
+            });
+
+            using (var stream = new MemoryStream())
+            {
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), $"ExpenseReport_{Guid.NewGuid()}.pdf");
+                document.GeneratePdf(filePath);
+                document.GeneratePdf(stream);
+                return new SuccessDataResult<byte[]>(stream.ToArray(), Messages.ReportCreated);
+            }
+        }
 
         [SecuredOperation("user")]
         public IResult Update(Expense expense)
@@ -92,117 +176,5 @@ namespace Business.Concrete
             }
             return new SuccessResult();
         }
-
-        public IDataResult<byte[]> GetMonthlyReport(int year, int month)
-        {
-            List<Expense> expenseList = _expenseDal.GetAll(e => e.UserId == _httpContextAccessor.HttpContext.User.GetUserId() && e.ExpenseDate.Year == year && e.ExpenseDate.Month == month);
-            QuestPDF.Settings.License = LicenseType.Community;
-
-            var document = Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.A4);
-                    page.Margin(2, Unit.Centimetre);
-                    page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(20));
-
-                    page.Header()
-                        .Text($"Monthly Expenses Report - {month}")
-                        .SemiBold().FontSize(36).FontColor(Colors.Blue.Medium);
-
-                    page.Content()
-                        .AddTable(table =>
-                        {
-                            table.AddColumn("Date", col => col.Alignment = HorizontalAlignment.Left);
-                            table.AddColumn("Amount", col => col.Alignment = HorizontalAlignment.Right);
-                            table.AddColumn("Description", col => col.Alignment = HorizontalAlignment.Left);
-
-                            foreach (var expense in expenseList)
-                            {
-                                table.AddRow(
-                                    expense.ExpenseDate.ToString("yyyy-MM-dd"),
-                                    $"{expense.Amount:C}",
-                                    expense.Description
-                                );
-                            }
-                        })
-                        .AddParagraph(builder =>
-                        {
-                            builder.Text($"Total Expenses: {expenseList.Sum(e => e.Amount):C}")
-                                   .Alignment(HorizontalAlignment.Right);
-                        });
-
-                    page.Footer()
-                        .AlignCenter()
-                        .Text(x =>
-                        {
-                            x.Span("Page ");
-                            x.CurrentPageNumber();
-                        });
-                });
-            });
-
-            using (var stream = new MemoryStream())
-            {
-                document.GeneratePdf(stream);
-                return new SuccessDataResult<byte[]>(stream.ToArray(), "Monthly Expenses PDF generated successfully.");
-            }
-        }
     }
 }
-
-
-/*
- 
- 
-  public static byte[] GenerateMonthlyExpensesPdf(List<Expense> expenseList, string month)
-    {
-        return new PDFDocument()
-            .AddSection()
-                .Header(Header)
-                .Footer(Footer)
-                .AddParagraph($"Monthly Expenses Report - {month}")
-                .AddParagraph($"Generated on: {DateTime.Now}")
-                .AddTable()
-                    .AddColumn("Date", col => col.Alignment = HorizontalAlignment.Left)
-                    .AddColumn("Amount", col => col.Alignment = HorizontalAlignment.Right)
-                    .AddColumn("Description", col => col.Alignment = HorizontalAlignment.Left)
-                    .ForEach(expenseList, (table, expense) =>
-                    {
-                        table.AddRow(
-                            expense.ExpenseDate.ToString("yyyy-MM-dd"),
-                            $"{expense.Amount:C}",
-                            expense.Description
-                        );
-                    })
-                .Parent()
-                .AddParagraph()
-                    .Text($"Total Expenses: {expenseList.Sum(e => e.Amount):C}")
-                    .Alignment(HorizontalAlignment.Right)
-            .GenerateDocument();
-    }
-
-    private static void Header(IContainer container)
-    {
-        container.Row(row =>
-        {
-            row.RelativeColumn().Stack(stack =>
-            {
-                stack.Element().Text("Monthly Expenses Report").FontSize(15).Bold();
-                stack.Element().Text($"Generated on: {DateTime.Now.ToShortDateString()}");
-            }).Padding(10);
-        });
-    }
-
-    private static void Footer(IContainer container)
-    {
-        container.Row(row =>
-        {
-            row.RelativeColumn().Stack(stack =>
-            {
-                stack.Element().Text("Page {pageNumber} of {totalPages}").Alignment(HorizontalAlignment.Right);
-            }).Padding(10);
-        });
-    }
- */

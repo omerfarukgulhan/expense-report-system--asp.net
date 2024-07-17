@@ -8,9 +8,10 @@ namespace Business.Abstract
     {
         IDataResult<List<Expense>> GetAll();
         IDataResult<Expense> GetById(int expenseId);
+        IDataResult<List<Expense>> GetMonthlyExpenses(int year, int month);
+        IDataResult<byte[]> GetMonthlyReport(int year, int month);
         IResult Add(Expense expense);
         IResult Update(Expense expense);
         IResult Delete(int expenseId);
-        IDataResult<byte[]> GetMonthlyReport(int year, int month);
     }
 }

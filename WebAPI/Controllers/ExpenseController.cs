@@ -37,16 +37,26 @@ namespace WebAPI.Controllers
             return BadRequest(result);
         }
 
-        //        [HttpGet("report/monthly-expenses/{year}/{month}")]
-        [HttpGet("report")]
-        public IActionResult GetMonthlyReport()
+        [HttpGet("{year}/{month}")]
+        public IActionResult Get(int year, int month)
         {
-            var result = _expenseService.GetMonthlyReport();
+            var result = _expenseService.GetMonthlyExpenses(year, month);
             if (result.Success)
             {
                 return Ok(result);
             }
-            return File(result.Data, "application/pdf", "PhoneList.pdf");
+            return BadRequest(result);
+        }
+
+        [HttpGet("report/{year}/{month}")]
+        public IActionResult GetMonthlyReport(int year, int month)
+        {
+            var result = _expenseService.GetMonthlyReport(year, month);
+            if (result.Success)
+            {
+                return File(result.Data, "application/pdf", $"Monthly Expense Report-{month}-{year}.pdf");
+            }
+            return BadRequest(result);
         }
 
         [HttpPost]
